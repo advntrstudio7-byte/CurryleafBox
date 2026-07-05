@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingBag, Calendar, Menu, X } from 'lucide-react';
+import brandLogo from '../assets/logo.png';
 
 interface NavbarProps {
   activeSection: string;
@@ -47,16 +48,9 @@ export default function Navbar({
         {/* Brand Logo */}
         <button
           onClick={() => handleNavClick('menu')}
-          className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+          className="hover:opacity-90 transition-opacity cursor-pointer flex items-center"
         >
-          <img 
-            src="/logo.png" 
-            alt="Curry Leaf Box Logo" 
-            className="w-12 h-12 md:w-14 md:h-14 object-contain rounded-full shadow-sm"
-          />
-          <span className="font-serif text-2xl md:text-3xl font-bold text-primary tracking-tight hidden sm:block">
-            Curry Leaf Box
-          </span>
+          <img src={brandLogo} alt="Curry Leaf Box Logo" className="h-16 w-auto object-contain drop-shadow-sm" />
         </button>
 
         {/* Desktop Links */}
