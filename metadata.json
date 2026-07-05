@@ -1,0 +1,6 @@
+{
+  "name": "Curry Leaf Box",
+  "description": "Authentic South Indian culinary heritage delivered with modern precision.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
