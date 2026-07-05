@@ -35,6 +35,37 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const rafId           = useRef<number | null>(null);
   const hasPlayed       = useRef(false);
+  const audioUnlocked   = useRef(false);
+  const currentFrameRef = useRef(0);
+
+  // Unlock audio on first user interaction
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (audioRef.current && !audioUnlocked.current) {
+        audioUnlocked.current = true;
+        if (currentFrameRef.current >= 20 && !hasPlayed.current) {
+          audioRef.current.volume = 0.3;
+          audioRef.current.play().then(() => {
+            hasPlayed.current = true;
+          }).catch(() => {});
+        } else {
+          audioRef.current.play().then(() => {
+            audioRef.current?.pause();
+            if (audioRef.current) audioRef.current.currentTime = 0;
+          }).catch(() => {});
+        }
+      }
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('click', unlockAudio);
+    };
+    
+    window.addEventListener('touchstart', unlockAudio);
+    window.addEventListener('click', unlockAudio);
+    return () => {
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('click', unlockAudio);
+    };
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -109,9 +140,9 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: scrollRef.current,
-        start: 'top top',
+        start: isMobile ? 'top -10px' : 'top top',
         end: 'bottom bottom',
-        scrub: true,
+        scrub: isMobile ? false : true,
       }
     });
     
@@ -120,31 +151,32 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
     tl.to(airfoils, {
       frame: frameSrcs.length - 1,
       ease: 'none',
+      duration: isMobile ? 1.5 : undefined,
       onUpdate: () => {
         const currentFrame = Math.round(airfoils.frame);
+        currentFrameRef.current = currentFrame;
         
-        // Only progress the frame forward
-        if (currentFrame > maxFrameRendered) {
+        // Render the frame if it changed
+        if (currentFrame !== maxFrameRendered) {
           maxFrameRendered = currentFrame;
           renderFrame(maxFrameRendered);
+        }
           
-          // Trigger the realistic sizzle sound when the leaf drops onto the board (around frame 20)
-          if (maxFrameRendered >= 20 && !hasPlayed.current) {
-            if (audioRef.current) {
-              if (audioRef.current.paused) {
-                audioRef.current.currentTime = 0;
-              }
-              const playPromise = audioRef.current.play();
-              if (playPromise !== undefined) {
-                playPromise.then(() => {
-                  hasPlayed.current = true;
-                }).catch(() => {
-                  // Playback was blocked by autoplay policy.
-                  // We do not set hasPlayed.current to true, so it will retry on the next scroll tick.
-                });
-              } else {
+        // Trigger the realistic sizzle sound when the leaf drops onto the board (around frame 20)
+        if (currentFrame >= 20 && !hasPlayed.current) {
+          if (audioRef.current) {
+            if (audioRef.current.paused) {
+              audioRef.current.currentTime = 0;
+            }
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
                 hasPlayed.current = true;
-              }
+              }).catch(() => {
+                // Playback blocked, will retry on next tick
+              });
+            } else {
+              hasPlayed.current = true;
             }
           }
         }
@@ -166,7 +198,7 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
      */
     <div
       ref={scrollRef}
-      style={{ height: '220vh' }}
+      style={{ height: isMobile ? '120vh' : '220vh' }}
       className="relative w-full"
     >
       {/* ── Sticky panel: height locks to aspect ratio ── */}
