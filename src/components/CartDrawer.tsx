@@ -136,7 +136,7 @@ export default function CartDrawer({
                         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-surface-container-low">
                           <img
                             src={item.menuItem.image}
-                            alt={item.menuItem.title}
+                            alt={item.menuItem.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -146,7 +146,7 @@ export default function CartDrawer({
                           <div className="flex justify-between items-start gap-2">
                             <div className="flex flex-col">
                               <span className="font-sans font-bold text-primary text-sm sm:text-base leading-tight">
-                                {item.menuItem.title}
+                                {item.menuItem.name}
                               </span>
                               <span className="text-terracotta font-semibold text-xs mt-0.5">
                                 ₹{item.menuItem.price}
