@@ -50,6 +50,38 @@ export default function CartDrawer({
       alert('Please fill in all required fields.');
       return;
     }
+    
+    // Construct WhatsApp message
+    let message = `*New Order - Curry Leaf Box*%0A%0A`;
+    
+    // Items
+    message += `*Items:*%0A`;
+    cartItems.forEach(item => {
+      message += `- ${item.quantity}x ${item.menuItem.title} (₹${item.menuItem.price * item.quantity})%0A`;
+      if (item.customInstructions) {
+        message += `  _Note: ${item.customInstructions}_%0A`;
+      }
+    });
+    
+    // Totals
+    message += `%0A*Bill Summary:*%0A`;
+    message += `Subtotal: ₹${subtotal}%0A`;
+    message += `Taxes/Pkg: ₹${taxesAndPkg}%0A`;
+    message += `Delivery: ₹${deliveryFee}%0A`;
+    message += `*Total: ₹${total}* (${paymentMethod.toUpperCase()})%0A%0A`;
+    
+    // Customer Details
+    message += `*Customer Details:*%0A`;
+    message += `Name: ${name}%0A`;
+    message += `Phone: ${phone}%0A`;
+    message += `Order Type: ${deliveryType === 'delivery' ? 'Delivery' : 'Takeaway'}%0A`;
+    if (deliveryType === 'delivery') {
+      message += `Address: ${address}%0A`;
+    }
+    
+    const whatsappUrl = `https://wa.me/919810256338?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+    
     setStep('success');
   };
 
