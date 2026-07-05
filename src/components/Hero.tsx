@@ -45,9 +45,10 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
         audioUnlocked.current = true;
         if (currentFrameRef.current >= 20 && !hasPlayed.current) {
           audioRef.current.volume = 0.3;
-          audioRef.current.play().then(() => {
-            hasPlayed.current = true;
-          }).catch(() => {});
+          hasPlayed.current = true;
+          audioRef.current.play().catch(() => {
+            hasPlayed.current = false;
+          });
         } else {
           audioRef.current.play().then(() => {
             audioRef.current?.pause();
@@ -153,8 +154,12 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
         const currentFrame = Math.round(airfoils.frame);
         currentFrameRef.current = currentFrame;
         
-        // Desktop: Only progress forward, never backward
-        if (currentFrame > maxFrameRendered) {
+        // Desktop: Reset tracking if we scroll back up to the very top
+        if (currentFrame === 0) {
+          maxFrameRendered = 0;
+          hasPlayed.current = false;
+          renderFrame(0);
+        } else if (currentFrame > maxFrameRendered) {
           maxFrameRendered = currentFrame;
           renderFrame(maxFrameRendered);
           
@@ -163,13 +168,12 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
               if (audioRef.current.paused) {
                 audioRef.current.currentTime = 0;
               }
+              hasPlayed.current = true;
               const playPromise = audioRef.current.play();
               if (playPromise !== undefined) {
-                playPromise.then(() => {
-                  hasPlayed.current = true;
-                }).catch(() => {});
-              } else {
-                hasPlayed.current = true;
+                playPromise.catch(() => {
+                  hasPlayed.current = false;
+                });
               }
             }
           }
@@ -248,13 +252,12 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
                 if (audioRef.current) {
                    audioRef.current.volume = 0.3;
                    audioRef.current.currentTime = 0;
+                   hasPlayed.current = true;
                    const playPromise = audioRef.current.play();
                    if (playPromise !== undefined) {
-                     playPromise.then(() => {
-                       hasPlayed.current = true;
-                     }).catch(() => {});
-                   } else {
-                     hasPlayed.current = true;
+                     playPromise.catch(() => {
+                       hasPlayed.current = false;
+                     });
                    }
                 }
               }
