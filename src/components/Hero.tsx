@@ -112,9 +112,9 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
     imagesRef.current = imgs;
   }, [frameSrcs, imgW, imgH]);
 
-  // ── 2. Bind the timeline to GSAP ScrollTrigger ─────────
+  // ── 2. Desktop: Bind the timeline to GSAP ScrollTrigger ─────────
   useEffect(() => {
-    if (!ready || !scrollRef.current || !canvasRef.current) return;
+    if (isMobile || !ready || !scrollRef.current || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -122,7 +122,6 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
 
     const airfoils = { frame: 0 };
 
-    // Function to render a specific frame onto the canvas using requestAnimationFrame
     const renderFrame = (index: number) => {
       if (rafId.current !== null) {
         cancelAnimationFrame(rafId.current);
@@ -136,13 +135,12 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
       });
     };
 
-    // Main animation timeline tied directly to scroll
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: scrollRef.current,
-        start: isMobile ? 'top -10px' : 'top top',
+        start: 'top top',
         end: 'bottom bottom',
-        scrub: isMobile ? false : true,
+        scrub: true,
       }
     });
     
@@ -151,32 +149,28 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
     tl.to(airfoils, {
       frame: frameSrcs.length - 1,
       ease: 'none',
-      duration: isMobile ? 1.5 : undefined,
       onUpdate: () => {
         const currentFrame = Math.round(airfoils.frame);
         currentFrameRef.current = currentFrame;
         
-        // Render the frame if it changed
-        if (currentFrame !== maxFrameRendered) {
+        // Desktop: Only progress forward, never backward
+        if (currentFrame > maxFrameRendered) {
           maxFrameRendered = currentFrame;
           renderFrame(maxFrameRendered);
-        }
           
-        // Trigger the realistic sizzle sound when the leaf drops onto the board (around frame 20)
-        if (currentFrame >= 20 && !hasPlayed.current) {
-          if (audioRef.current) {
-            if (audioRef.current.paused) {
-              audioRef.current.currentTime = 0;
-            }
-            const playPromise = audioRef.current.play();
-            if (playPromise !== undefined) {
-              playPromise.then(() => {
+          if (maxFrameRendered >= 20 && !hasPlayed.current) {
+            if (audioRef.current) {
+              if (audioRef.current.paused) {
+                audioRef.current.currentTime = 0;
+              }
+              const playPromise = audioRef.current.play();
+              if (playPromise !== undefined) {
+                playPromise.then(() => {
+                  hasPlayed.current = true;
+                }).catch(() => {});
+              } else {
                 hasPlayed.current = true;
-              }).catch(() => {
-                // Playback blocked, will retry on next tick
-              });
-            } else {
-              hasPlayed.current = true;
+              }
             }
           }
         }
@@ -190,7 +184,100 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
         cancelAnimationFrame(rafId.current);
       }
     };
-  }, [ready]);
+  }, [ready, isMobile, frameSrcs, imgW, imgH]);
+
+  // ── 3. Mobile: Custom swipe-to-play lock ─────────
+  useEffect(() => {
+    if (!isMobile || !ready || !canvasRef.current || hasPlayed.current) return;
+    
+    // Only lock scroll if user is at the very top of the page
+    if (window.scrollY > 10) return;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none'; // Ensure iOS lock
+    
+    let startY = 0;
+    let isAnimating = false;
+    
+    const unlockScroll = () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+    };
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isAnimating || hasPlayed.current) return;
+      
+      const currentY = e.touches[0].clientY;
+      const deltaY = startY - currentY; 
+      
+      // If swiping up on the screen (scrolling page down)
+      if (deltaY > 10) { 
+        isAnimating = true;
+        
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!ctx) return;
+        
+        const obj = { frame: 0 };
+        let localMaxFrame = 0;
+        
+        gsap.to(obj, {
+          frame: frameSrcs.length - 1,
+          duration: 1.5,
+          ease: 'none',
+          onUpdate: () => {
+            const f = Math.round(obj.frame);
+            currentFrameRef.current = f;
+            if (f > localMaxFrame) {
+              localMaxFrame = f;
+              
+              if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+              rafId.current = requestAnimationFrame(() => {
+                const img = imagesRef.current[f];
+                if (img && img.complete) {
+                   ctx.clearRect(0, 0, imgW, imgH);
+                   ctx.drawImage(img, 0, 0, imgW, imgH);
+                }
+              });
+              
+              if (f >= 20 && !hasPlayed.current) {
+                if (audioRef.current) {
+                   audioRef.current.volume = 0.3;
+                   audioRef.current.currentTime = 0;
+                   const playPromise = audioRef.current.play();
+                   if (playPromise !== undefined) {
+                     playPromise.then(() => {
+                       hasPlayed.current = true;
+                     }).catch(() => {});
+                   } else {
+                     hasPlayed.current = true;
+                   }
+                }
+              }
+            }
+          },
+          onComplete: () => {
+             hasPlayed.current = true; 
+             unlockScroll();
+          }
+        });
+      }
+    };
+    
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    
+    return () => {
+      unlockScroll();
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+    };
+  }, [ready, isMobile, frameSrcs, imgW, imgH]);
 
   return (
     /*
@@ -198,12 +285,12 @@ export default function Hero({ onViewMenuClick }: HeroProps) {
      */
     <div
       ref={scrollRef}
-      style={{ height: isMobile ? '120vh' : '220vh' }}
+      style={{ height: isMobile ? `calc(100vw * ${imgH} / ${imgW})` : '220vh' }}
       className="relative w-full"
     >
       {/* ── Sticky panel: height locks to aspect ratio ── */}
       <div
-        className="sticky top-0 w-full overflow-hidden"
+        className={isMobile ? "relative w-full overflow-hidden" : "sticky top-0 w-full overflow-hidden"}
         style={{ height: `calc(100vw * ${imgH} / ${imgW})` }}
       >
         {/* ── Canvas: rendered to by GSAP ScrollTrigger ── */}
