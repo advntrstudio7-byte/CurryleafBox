@@ -10,7 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Dynamically import all zero-padded frame images from the banner folder
 const modulesDesktop = import.meta.glob('../assets/banner/frame_*.jpg', { eager: true, import: 'default' }) as Record<string, string>;
-const modulesMobile = import.meta.glob('../assets/banner_mob/Mob_01_*.jpg', { eager: true, import: 'default' }) as Record<string, string>;
+const modulesMobile = import.meta.glob('../assets/banner_mob/*.jpg', { eager: true, import: 'default' }) as Record<string, string>;
 
 // ─── All frame sources in order ───────────────────────────────────────────────
 const FRAME_SRCS_DESKTOP = Object.keys(modulesDesktop).sort().map(key => modulesDesktop[key]);
