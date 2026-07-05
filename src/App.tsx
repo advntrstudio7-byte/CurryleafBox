@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import Favorites from './components/Favorites';
 import FullMenu from './components/FullMenu';
 import Storytelling from './components/Storytelling';
 import ReviewsSection from './components/ReviewsSection';
@@ -160,13 +159,6 @@ export default function App() {
       <main className="flex-1">
         {/* Brand Message Section */}
         <BrandMessage />
-
-        {/* Customer Favorites Showcase */}
-        <Favorites
-          menuItems={MENU_ITEMS}
-          onAddToCart={handleAddToCart}
-          addedItems={addedItems}
-        />
 
         {/* Heritage Storytelling details (Story, Tradition, Banana Leaf experience) */}
         <Storytelling />
