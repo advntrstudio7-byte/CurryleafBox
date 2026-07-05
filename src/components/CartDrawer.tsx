@@ -39,7 +39,7 @@ export default function CartDrawer({
     // Items
     message += `*Items:*%0A`;
     cartItems.forEach(item => {
-      message += `- ${item.quantity}x ${item.menuItem.title} (₹${item.menuItem.price * item.quantity})%0A`;
+      message += `- ${item.quantity}x ${item.menuItem.name} (₹${item.menuItem.price * item.quantity})%0A`;
       if (item.customInstructions) {
         message += `  _Note: ${item.customInstructions}_%0A`;
       }
