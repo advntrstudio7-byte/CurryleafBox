@@ -50,7 +50,7 @@ export default function Navbar({
           className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
         >
           <img 
-            src="/src/assets/logo.png" 
+            src="/logo.png" 
             alt="Curry Leaf Box Logo" 
             className="w-12 h-12 md:w-14 md:h-14 object-contain rounded-full shadow-sm"
           />
